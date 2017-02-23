@@ -171,7 +171,7 @@ bool HTTP_Stream::open(const Input_Stream_Position& position)
     /* Failed to create a stream */
     if (!(m_readStream = createReadStream(m_url))) {
         goto out;
-    }
+    } 
     
     if (!CFReadStreamSetClient(m_readStream, kCFStreamEventHasBytesAvailable |
 	                                         kCFStreamEventEndEncountered |
@@ -806,7 +806,13 @@ void HTTP_Stream::readCallBack(CFReadStreamRef stream, CFStreamEventType eventTy
                     HS_TRACE("Read %li bytes, total %llu\n", bytesRead, THIS->m_bytesRead);
                     
                     THIS->parseHttpHeadersIfNeeded(THIS->m_httpReadBuffer, bytesRead);
+                    CFHTTPMessageRef response = (CFHTTPMessageRef)CFReadStreamCopyProperty(stream, kCFStreamPropertyHTTPResponseHeader);
+                    CFIndex statusCode = 0;
                     
+                    statusCode = CFHTTPMessageGetResponseStatusCode(response);
+                    if(statusCode >= 400) {
+                        break;
+                    }
     #ifdef INCLUDE_ID3TAG_SUPPORT
                     if (!THIS->m_icyStream && THIS->m_id3Parser->wantData()) {
                         THIS->m_id3Parser->feedData(THIS->m_httpReadBuffer, (UInt32)bytesRead);
